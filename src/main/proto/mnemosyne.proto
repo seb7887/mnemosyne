@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package mnemosyne;
+
+message NewUserReq {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message LoginReq {
+  string email = 1;
+  string password = 2;
+}
+
+message UserResponse {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string picture = 4;
+  string role = 5;
+  string currentWorkspace = 6;
+  string currentGrid = 7;
+  string lastLogin = 8;
+  string updatedAt = 9;
+}
+
+message LoginResponse {
+  bool authenticated = 1;
+}
+
+service Mnemosyne {
+  rpc SignUp(NewUserReq) returns (UserResponse) {}
+  rpc Login(LoginReq) returns (LoginResponse) {}
+}
