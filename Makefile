@@ -1,5 +1,5 @@
 .phony: migrate
-all:
+migrate:
 	./mvnw flyway:migrate
 
 .phony: run

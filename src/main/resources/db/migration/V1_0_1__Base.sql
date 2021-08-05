@@ -15,15 +15,13 @@ CREATE TABLE grids (
 
 ALTER TABLE grids ADD FOREIGN KEY (workspace_id) REFERENCES workspaces(id);
 
-CREATE TYPE user_role AS ENUM ('admin', 'operator');
-
 CREATE TABLE users (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     username VARCHAR NOT NULL,
     email VARCHAR UNIQUE NOT NULL,
     hash VARCHAR NOT NULL,
     picture VARCHAR,
-    role user_role DEFAULT 'operator',
+    role VARCHAR DEFAULT 'operator',
     current_workspace uuid,
     current_grid uuid,
     last_login TIMESTAMP DEFAULT current_timestamp,

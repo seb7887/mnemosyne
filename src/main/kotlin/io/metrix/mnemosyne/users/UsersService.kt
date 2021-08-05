@@ -5,8 +5,16 @@ import mnemosyne.*
 import org.lognet.springboot.grpc.GRpcService
 
 @GRpcService
-class UsersService : MnemosyneGrpc.MnemosyneImplBase() {
+class UsersService(private val usersRepository: UsersRepository) : MnemosyneGrpc.MnemosyneImplBase() {
     override fun signUp(request: NewUserReq?, responseObserver: StreamObserver<UserResponse>?) {
+        val newUser = UsersEntity(
+            username = request!!.username,
+            email = request!!.email,
+            hash = "hash",
+            role = "admin",
+        )
+        usersRepository.save(newUser)
+
         val response = UserResponse.newBuilder()
             .setId("1")
             .setEmail(request!!.email)
