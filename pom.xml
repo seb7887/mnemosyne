@@ -24,6 +24,7 @@
 		<grpc-spring.version>4.5.5</grpc-spring.version>
 		<grpc.kotlin.version>1.1.0</grpc.kotlin.version>
 		<protobuf.version>3.17.2</protobuf.version>
+		<bcrypt.version>0.4</bcrypt.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -84,6 +85,11 @@
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-kotlin</artifactId>
 			<version>${protobuf.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mindrot</groupId>
+			<artifactId>jbcrypt</artifactId>
+			<version>${bcrypt.version}</version>
 		</dependency>
 
 		<dependency>

@@ -36,11 +36,11 @@ class UsersEntity (
     var currentGrid: UUID? = null,
 
     @get:Column(name = "last_login")
-    val lastLogin: OffsetDateTime = OffsetDateTime.now(),
+    var lastLogin: OffsetDateTime = OffsetDateTime.now(),
 
     @get:Column(name = "created_at")
     val createdAt: OffsetDateTime = OffsetDateTime.now(),
 
     @get:Column(name = "updated_at")
-    val updatedAt: OffsetDateTime = OffsetDateTime.now()
+    var updatedAt: OffsetDateTime = OffsetDateTime.now()
 )

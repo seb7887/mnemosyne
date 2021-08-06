@@ -16,6 +16,10 @@ message LoginReq {
   string password = 2;
 }
 
+message GetEntityReq {
+  string id = 1;
+}
+
 message UserResponse {
   string id = 1;
   string username = 2;
@@ -28,11 +32,8 @@ message UserResponse {
   string updatedAt = 9;
 }
 
-message LoginResponse {
-  bool authenticated = 1;
-}
-
 service Mnemosyne {
   rpc SignUp(NewUserReq) returns (UserResponse) {}
-  rpc Login(LoginReq) returns (LoginResponse) {}
+  rpc Login(LoginReq) returns (UserResponse) {}
+  rpc GetUser(GetEntityReq) returns (UserResponse) {}
 }
