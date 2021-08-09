@@ -1,7 +1,6 @@
-package io.metrix.mnemosyne.users
+package io.metrix.mnemosyne.entities
 
 import org.hibernate.annotations.GenericGenerator
-import org.hibernate.annotations.Type
 import java.time.OffsetDateTime
 import java.util.*
 import javax.persistence.*
