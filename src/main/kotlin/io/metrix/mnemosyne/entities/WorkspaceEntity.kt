@@ -7,7 +7,7 @@ import javax.persistence.*
 
 @Entity
 @Table(name = "workspaces")
-class WorkspacesEntity (
+class WorkspaceEntity (
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
@@ -20,5 +20,5 @@ class WorkspacesEntity (
     val createdAt: OffsetDateTime = OffsetDateTime.now(),
 
     @get:Column(name = "updated_at")
-    var updatedAt: OffsetDateTime = OffsetDateTime.now()
+    var updatedAt: OffsetDateTime = OffsetDateTime.now(),
 )

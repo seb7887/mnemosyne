@@ -7,7 +7,7 @@ import javax.persistence.*
 
 @Entity
 @Table(name = "users")
-class UsersEntity (
+class UserEntity (
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")

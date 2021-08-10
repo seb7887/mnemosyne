@@ -67,9 +67,28 @@ message WorkspaceResponse {
   string updatedAt = 4;
 }
 
+message NewGridReq {
+  string name = 1;
+  string workspaceId = 2;
+}
+
+message GridResponse {
+  string id = 1;
+  string name = 2;
+  string workspaceId = 3;
+  string createdAt = 4;
+  string updatedAt = 5;
+}
+
+message GridsResponse {
+  repeated GridResponse grids = 1;
+  int64 total = 2;
+}
+
 service Mnemosyne {
   // Workspaces
   rpc CreateWorkspace(NewWorkspaceReq) returns (WorkspaceResponse) {}
+  rpc GetWorkspace(GetEntityReq) returns (WorkspaceResponse) {}
   // Users
   rpc SignUp(NewUserReq) returns (UserResponse) {}
   rpc Login(LoginReq) returns (UserResponse) {}
@@ -78,4 +97,9 @@ service Mnemosyne {
   rpc UpdateUser(ModifyUserReq) returns (UserResponse) {}
   rpc ChangePassword(ChangePasswordReq) returns (StatusResponse) {}
   rpc DeleteUser(ModifyUserReq) returns (StatusResponse) {}
+  // Grids
+  rpc CreateGrid(NewGridReq) returns (GridResponse) {}
+  rpc GetGrid(GetEntityReq) returns (GridResponse) {}
+  rpc GetGridsByWorkspace(GetEntityByWorkspaceReq) returns (GridsResponse) {}
+  // Nodes
 }
