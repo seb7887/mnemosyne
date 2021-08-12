@@ -3,9 +3,11 @@ package io.metrix.mnemosyne.services
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import io.metrix.mnemosyne.entities.GridEntity
+import io.metrix.mnemosyne.entities.NodeEntity
 import io.metrix.mnemosyne.entities.UserEntity
 import io.metrix.mnemosyne.entities.WorkspaceEntity
 import io.metrix.mnemosyne.repositories.GridRepository
+import io.metrix.mnemosyne.repositories.NodeRepository
 import io.metrix.mnemosyne.repositories.UserRepository
 import io.metrix.mnemosyne.repositories.WorkspaceRepository
 import mnemosyne.*
@@ -18,7 +20,8 @@ import java.util.*
 class MnemosyneService(
     private val userRepository: UserRepository,
     private val workspacesRepository: WorkspaceRepository,
-    private val gridRepository: GridRepository) : MnemosyneGrpc.MnemosyneImplBase() {
+    private val gridRepository: GridRepository,
+    private val nodeRepository: NodeRepository) : MnemosyneGrpc.MnemosyneImplBase() {
     override fun signUp(request: NewUserReq?, responseObserver: StreamObserver<UserResponse>?) {
         try {
             val newUser = UserEntity(
@@ -201,14 +204,14 @@ class MnemosyneService(
             .build()
     }
 
-    fun buildUsersResponse(users: List<UserResponse>): UsersResponse {
+    private fun buildUsersResponse(users: List<UserResponse>): UsersResponse {
         return UsersResponse.newBuilder()
             .addAllUsers(users)
             .setTotal(users.count().toLong())
             .build()
     }
 
-    fun buildStatusResponse(status: Boolean): StatusResponse {
+    private fun buildStatusResponse(status: Boolean): StatusResponse {
         return StatusResponse.newBuilder().setSuccess(status).build()
     }
 
@@ -250,7 +253,7 @@ class MnemosyneService(
         }
     }
 
-    fun buildWorkspaceResponse(workspace: WorkspaceEntity): WorkspaceResponse {
+    private fun buildWorkspaceResponse(workspace: WorkspaceEntity): WorkspaceResponse {
         return WorkspaceResponse.newBuilder()
             .setId(workspace.id.toString())
             .setName(workspace.name)
@@ -335,7 +338,141 @@ class MnemosyneService(
             .build()
     }
 
-    fun getUUID(value: String?): UUID? {
+    override fun createNode(request: NewNodeReq?, responseObserver: StreamObserver<NodeResponse>?) {
+        try {
+            nodeRepository.create(
+                request!!.name,
+                UUID.fromString(request!!.gridId),
+                request.location.latitude,
+                request.location.longitude,
+                UUID.fromString(request.createdBy),
+                UUID.fromString(request.createdBy)
+            )
+
+            val newNode = nodeRepository.findByName(request.name) ?: throw Exception("Error getting node data")
+
+            val response = buildNodeResponse(newNode)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    override fun getNode(request: GetEntityReq?, responseObserver: StreamObserver<NodeResponse>?) {
+        try {
+            val node = nodeRepository.findById(UUID.fromString(request!!.id)) ?: throw Exception("Node not found")
+
+            val response = buildNodeResponse(node)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    override fun getNodesByGrid(request: GetEntityByGridReq?, responseObserver: StreamObserver<NodesResponse>?) {
+        try {
+            val nodes = nodeRepository.findAllByGridId(UUID.fromString(request!!.gridId)).map {
+                buildNodeResponse(it)
+            }
+
+            val response = buildNodesResponse(nodes)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    override fun updateNode(request: UpdateNodeReq?, responseObserver: StreamObserver<NodeResponse>?) {
+        try {
+            val node = nodeRepository.findById(UUID.fromString(request!!.nodeId)) ?: throw Exception("Node not found")
+
+            node.active = request.fields.active
+            node.updatedBy = UUID.fromString(request.currentUser)
+            node.updatedAt = OffsetDateTime.now()
+
+            nodeRepository.save(node)
+
+            val response = buildNodeResponse(node)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    override fun deleteNode(request: UpdateNodeReq?, responseObserver: StreamObserver<StatusResponse>?) {
+        try {
+            val currentUser = userRepository.findById(UUID.fromString(request!!.currentUser)) ?: throw Exception("Current User not found")
+            if (currentUser.role != "admin") {
+                throw Exception("Unauthorized")
+            }
+
+            val node = nodeRepository.findById(UUID.fromString(request!!.nodeId)) ?: throw Exception("Target node not found")
+            nodeRepository.delete(node)
+
+            val response = buildStatusResponse(true)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    private fun buildNodeResponse(node: NodeEntity): NodeResponse {
+        val location = Location.newBuilder()
+            .setLatitude(node.location.coordinate.y)
+            .setLongitude(node.location.coordinate.x)
+            .build()
+
+        return NodeResponse.newBuilder()
+            .setId(node.id.toString())
+            .setName(node.name)
+            .setGridId(node.gridId.toString())
+            .setActive(node.active)
+            .setLocation(location)
+            .setCreatedBy(node.createdBy.toString())
+            .setCreatedAt(node.createdAt.toString())
+            .setUpdatedBy(node.updatedBy.toString())
+            .setUpdatedAt(node.updatedAt.toString())
+            .build()
+    }
+
+    private fun buildNodesResponse(nodes: List<NodeResponse>): NodesResponse {
+        return NodesResponse.newBuilder()
+            .addAllNodes(nodes)
+            .setTotal(nodes.count().toLong())
+            .build()
+    }
+
+    private fun getUUID(value: String?): UUID? {
         return try {
             UUID.fromString(value)
         } catch (e: Exception) {

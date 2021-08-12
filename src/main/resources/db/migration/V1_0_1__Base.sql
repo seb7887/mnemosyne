@@ -34,10 +34,10 @@ ALTER TABLE users ADD FOREIGN KEY (current_grid) REFERENCES grids(id);
 
 CREATE TABLE nodes (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    name VARCHAR NOT NULL,
+    name VARCHAR UNIQUE NOT NULL,
     active BOOLEAN DEFAULT true,
     grid_id uuid NOT NULL,
-    coordinates POINT NOT NULL,
+    location GEOMETRY(POINT) NOT NULL,
     created_by uuid NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp,
     updated_by uuid NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE devices (
     api_key VARCHAR NOT NULL,
     node_id uuid,
     type device_type DEFAULT 'meter',
-    coordinates POINT NOT NULL,
+    location GEOMETRY(POINT) NOT NULL,
     created_by uuid NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp,
     updated_by uuid NOT NULL,

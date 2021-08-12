@@ -85,6 +85,46 @@ message GridsResponse {
   int64 total = 2;
 }
 
+message Location {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message NewNodeReq {
+  string name = 1;
+  string gridId = 2;
+  Location location = 3;
+  bool active = 4;
+  string createdBy = 5;
+}
+
+message UpdateNodeReq {
+  string currentUser = 1;
+  string nodeId = 2;
+  NewNodeReq fields = 3;
+}
+
+message GetEntityByGridReq {
+  string gridId = 1;
+}
+
+message NodeResponse {
+  string id = 1;
+  string name = 2;
+  bool active = 3;
+  string gridId = 4;
+  Location location = 5;
+  string createdBy = 6;
+  string createdAt = 7;
+  string updatedBy = 8;
+  string updatedAt = 9;
+}
+
+message NodesResponse {
+  repeated NodeResponse nodes = 1;
+  int64 total = 2;
+}
+
 service Mnemosyne {
   // Workspaces
   rpc CreateWorkspace(NewWorkspaceReq) returns (WorkspaceResponse) {}
@@ -102,4 +142,9 @@ service Mnemosyne {
   rpc GetGrid(GetEntityReq) returns (GridResponse) {}
   rpc GetGridsByWorkspace(GetEntityByWorkspaceReq) returns (GridsResponse) {}
   // Nodes
+  rpc CreateNode(NewNodeReq) returns (NodeResponse) {}
+  rpc GetNode(GetEntityReq) returns (NodeResponse) {}
+  rpc GetNodesByGrid(GetEntityByGridReq) returns (NodesResponse) {}
+  rpc UpdateNode(UpdateNodeReq) returns (NodeResponse) {}
+  rpc DeleteNode(UpdateNodeReq) returns (StatusResponse) {}
 }
