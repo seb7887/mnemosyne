@@ -2,15 +2,11 @@ package io.metrix.mnemosyne.services
 
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
-import io.metrix.mnemosyne.entities.GridEntity
-import io.metrix.mnemosyne.entities.NodeEntity
-import io.metrix.mnemosyne.entities.UserEntity
-import io.metrix.mnemosyne.entities.WorkspaceEntity
-import io.metrix.mnemosyne.repositories.GridRepository
-import io.metrix.mnemosyne.repositories.NodeRepository
-import io.metrix.mnemosyne.repositories.UserRepository
-import io.metrix.mnemosyne.repositories.WorkspaceRepository
+import io.metrix.mnemosyne.entities.*
+import io.metrix.mnemosyne.repositories.*
 import mnemosyne.*
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
 import org.lognet.springboot.grpc.GRpcService
 import org.mindrot.jbcrypt.BCrypt
 import java.time.OffsetDateTime
@@ -21,7 +17,8 @@ class MnemosyneService(
     private val userRepository: UserRepository,
     private val workspacesRepository: WorkspaceRepository,
     private val gridRepository: GridRepository,
-    private val nodeRepository: NodeRepository) : MnemosyneGrpc.MnemosyneImplBase() {
+    private val nodeRepository: NodeRepository,
+    private val deviceRepository: DeviceRepository) : MnemosyneGrpc.MnemosyneImplBase() {
     override fun signUp(request: NewUserReq?, responseObserver: StreamObserver<UserResponse>?) {
         try {
             val newUser = UserEntity(
@@ -469,6 +466,152 @@ class MnemosyneService(
         return NodesResponse.newBuilder()
             .addAllNodes(nodes)
             .setTotal(nodes.count().toLong())
+            .build()
+    }
+
+    override fun createDevice(request: NewDeviceReq?, responseObserver: StreamObserver<DeviceResponse>?) {
+        try {
+            val newDevice = DeviceEntity(
+                apiKey = request!!.apiKey,
+                type = request!!.deviceType,
+                createdBy = UUID.fromString(request.createdBy),
+                updatedBy = UUID.fromString(request.createdBy)
+            )
+
+            deviceRepository.save(newDevice)
+
+            val response = buildDeviceResponse(newDevice)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    override fun getDevice(request: GetEntityReq?, responseObserver: StreamObserver<DeviceResponse>?) {
+        try {
+            val device = deviceRepository.findById(UUID.fromString(request!!.id)) ?: throw Exception("Device not found")
+            println(device)
+            val response = buildDeviceResponse(device)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            println(e)
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    override fun getDevicesByNode(request: GetEntityByNodeIdReq?, responseObserver: StreamObserver<DevicesResponse>?) {
+        try {
+            val devices = deviceRepository.findAllByNodeId(UUID.fromString(request!!.nodeId)).map {
+                buildDeviceResponse(it)
+            }
+
+            val response = buildDevicesResponse(devices)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    override fun updateDevice(request: UpdateDeviceReq?, responseObserver: StreamObserver<DeviceResponse>?) {
+        try {
+            val currentUser = userRepository.findById(UUID.fromString(request!!.currentUser)) ?: throw Exception("Current user not found")
+            if (currentUser.role != "admin") {
+                throw Exception("Unauthorized")
+            }
+
+            val device = deviceRepository.findByApiKey(request.apiKey) ?: throw Exception("Device not found")
+            val geometryFactory = GeometryFactory()
+            val coordinate = Coordinate(request.location.longitude, request.location.latitude)
+            val point = geometryFactory.createPoint(coordinate)
+            point.srid = 4326
+
+            device.location = point
+            device.nodeId = UUID.fromString(request!!.nodeId)
+            device.updatedBy = UUID.fromString(request!!.currentUser)
+            device.updatedAt = OffsetDateTime.now()
+
+            deviceRepository.save(device)
+
+            val response = buildDeviceResponse(device)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    private fun buildDeviceResponse(device: DeviceEntity): DeviceResponse {
+        val location = if (device.location != null) {
+            Location.newBuilder()
+                .setLatitude(device.location!!.coordinate.y)
+                .setLongitude(device.location!!.coordinate.x)
+                .build()
+        } else {
+            Location.newBuilder().build()
+        }
+
+        return DeviceResponse.newBuilder()
+            .setId(device.id.toString())
+            .setDeviceType(device.type)
+            .setNodeId(device.nodeId.toString())
+            .setLocation(location)
+            .setCreatedBy(device.createdBy.toString())
+            .setCreatedAt(device.createdAt.toString())
+            .setUpdatedBy(device.updatedBy.toString())
+            .setUpdatedAt(device.updatedAt.toString())
+            .build()
+    }
+
+    override fun deleteDevice(request: DeleteDeviceReq?, responseObserver: StreamObserver<StatusResponse>?) {
+        try {
+            val currentUser = userRepository.findById(UUID.fromString(request!!.currentUser)) ?: throw Exception("Current user not found")
+            if (currentUser.role != "admin") {
+                throw Exception("Unauthorized")
+            }
+
+            val device = deviceRepository.findById(UUID.fromString(request!!.deviceId)) ?: throw Exception("Device not found")
+            deviceRepository.delete(device)
+
+            val response = buildStatusResponse(true)
+
+            responseObserver?.onNext(response)
+            responseObserver?.onCompleted()
+        } catch (e: Exception) {
+            responseObserver?.onError(Status.INTERNAL
+                .withDescription(e.message)
+                .withCause(e)
+                .asRuntimeException()
+            )
+        }
+    }
+
+    private fun buildDevicesResponse(devices: List<DeviceResponse>): DevicesResponse {
+        return DevicesResponse.newBuilder()
+            .addAllDevices(devices)
+            .setTotal(devices.count().toLong())
             .build()
     }
 

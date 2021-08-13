@@ -48,14 +48,12 @@ ALTER TABLE nodes ADD FOREIGN KEY (grid_id) REFERENCES grids(id);
 ALTER TABLE nodes ADD FOREIGN KEY (created_by) REFERENCES users(id);
 ALTER TABLE nodes ADD FOREIGN KEY (updated_by) REFERENCES users(id);
 
-CREATE TYPE device_type AS ENUM('meter', 'generator');
-
 CREATE TABLE devices (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     api_key VARCHAR NOT NULL,
     node_id uuid,
-    type device_type DEFAULT 'meter',
-    location GEOMETRY(POINT) NOT NULL,
+    type VARCHAR DEFAULT "meter",
+    location GEOMETRY(POINT),
     created_by uuid NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp,
     updated_by uuid NOT NULL,

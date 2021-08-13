@@ -125,6 +125,44 @@ message NodesResponse {
   int64 total = 2;
 }
 
+message NewDeviceReq {
+  string apiKey = 1;
+  string deviceType = 2;
+  string createdBy = 3;
+}
+
+message GetEntityByNodeIdReq {
+  string nodeId = 1;
+}
+
+message UpdateDeviceReq {
+  string currentUser = 1;
+  string apiKey = 2;
+  Location location = 3;
+  string nodeId = 4;
+}
+
+message DeleteDeviceReq {
+  string currentUser = 1;
+  string deviceId = 2;
+}
+
+message DeviceResponse {
+  string id = 1;
+  string deviceType = 2;
+  string nodeId = 3;
+  Location location = 4;
+  string createdBy = 5;
+  string createdAt = 6;
+  string updatedBy = 7;
+  string updatedAt = 8;
+}
+
+message DevicesResponse {
+  repeated DeviceResponse devices = 1;
+  int64 total = 2;
+}
+
 service Mnemosyne {
   // Workspaces
   rpc CreateWorkspace(NewWorkspaceReq) returns (WorkspaceResponse) {}
@@ -147,4 +185,10 @@ service Mnemosyne {
   rpc GetNodesByGrid(GetEntityByGridReq) returns (NodesResponse) {}
   rpc UpdateNode(UpdateNodeReq) returns (NodeResponse) {}
   rpc DeleteNode(UpdateNodeReq) returns (StatusResponse) {}
+  // Devices
+  rpc CreateDevice(NewDeviceReq) returns (DeviceResponse) {}
+  rpc GetDevice(GetEntityReq) returns (DeviceResponse) {}
+  rpc GetDevicesByNode(GetEntityByNodeIdReq) returns (DevicesResponse) {}
+  rpc UpdateDevice(UpdateDeviceReq) returns (DeviceResponse) {}
+  rpc DeleteDevice(DeleteDeviceReq) returns (StatusResponse) {}
 }
