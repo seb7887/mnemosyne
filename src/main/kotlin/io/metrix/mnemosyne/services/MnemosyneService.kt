@@ -3,6 +3,7 @@ package io.metrix.mnemosyne.services
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import io.metrix.mnemosyne.entities.*
+import io.metrix.mnemosyne.interceptor.MetadataInterceptor
 import io.metrix.mnemosyne.repositories.*
 import mnemosyne.*
 import org.locationtech.jts.geom.Coordinate
@@ -12,7 +13,7 @@ import org.mindrot.jbcrypt.BCrypt
 import java.time.OffsetDateTime
 import java.util.*
 
-@GRpcService
+@GRpcService(interceptors = [MetadataInterceptor::class])
 class MnemosyneService(
     private val userRepository: UserRepository,
     private val workspacesRepository: WorkspaceRepository,
