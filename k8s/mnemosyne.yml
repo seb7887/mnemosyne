@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: mnemosyne
+  labels:
+    app: mnemosyne
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mnemosyne
+  template:
+    metadata:
+      labels:
+        app: mnemosyne
+    spec:
+      containers:
+        - name: mnemosyne
+          image: seb7887/mnemosyne:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http-port
+              containerPort: 8080
+            - name: grpc-port
+              containerPort: 6565
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http-port
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http-port
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mnemosyne
+  labels:
+    app: mnemosyne
+spec:
+  selector:
+    app: mnemosyne
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: http-port
+    - protocol: TCP
+      port: 6565
+      targetPort: 6565
+      name: grpc-port
+  type: ClusterIP
